@@ -12,8 +12,8 @@ topology:
       mgmt-ipv4: 172.10.10.10
       binds:
         - config:/home/auser/labs
-      publish:
-        - tcp/8080
+      ports:
+        - 8080:8080
 
       entrypoint: ryu-manager flowmanager/flowmanager.py labs/spine_leaf_1.py
 
