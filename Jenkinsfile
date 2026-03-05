@@ -109,7 +109,7 @@ pipeline {
     post {
         success {
             echo "SDN topology deployed successfully on ${HOST}"
-            echo "Ryu FlowManager UI: http://${HOST}:8080"
+            echo "Ryu FlowManager UI: http://${HOST}:8081"
         }
         failure {
             echo "Deployment failed."

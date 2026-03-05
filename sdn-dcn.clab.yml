@@ -13,11 +13,10 @@ topology:
       binds:
         - config:/home/auser/labs
       ports:
-        - 8080:8080
-
+        - 8081:8080
       entrypoint: ryu-manager flowmanager/flowmanager.py labs/spine_leaf_1.py
 
-
+    # ---- Hosts on Leaf1 (subnet 192.168.11.0/24) ----
     h11:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
@@ -25,6 +24,7 @@ topology:
       exec:
         - ip link set dev eth1 address 00:00:00:00:00:01
         - ip addr add 192.168.11.1/24 dev eth1
+        - ip route add default via 192.168.11.254 dev eth1
     h12:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
@@ -32,38 +32,100 @@ topology:
       exec:
         - ip link set dev eth1 address 00:00:00:00:00:02
         - ip addr add 192.168.11.2/24 dev eth1
+        - ip route add default via 192.168.11.254 dev eth1
+    h13:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.10.10.13
+      exec:
+        - ip link set dev eth1 address 00:00:00:00:00:03
+        - ip addr add 192.168.11.3/24 dev eth1
+        - ip route add default via 192.168.11.254 dev eth1
+
+    # ---- Hosts on Leaf2 (subnet 192.168.12.0/24) ----
     h21:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.10.10.21
       exec:
-        - ip link set dev eth1 address 00:00:00:00:00:03
-        - ip addr add 192.168.11.3/24 dev eth1
+        - ip link set dev eth1 address 00:00:00:00:00:04
+        - ip addr add 192.168.12.1/24 dev eth1
+        - ip route add default via 192.168.12.254 dev eth1
     h22:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.10.10.22
       exec:
-        - ip link set dev eth1 address 00:00:00:00:00:04
-        - ip addr add 192.168.11.4/24 dev eth1
+        - ip link set dev eth1 address 00:00:00:00:00:05
+        - ip addr add 192.168.12.2/24 dev eth1
+        - ip route add default via 192.168.12.254 dev eth1
+    h23:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.10.10.23
+      exec:
+        - ip link set dev eth1 address 00:00:00:00:00:06
+        - ip addr add 192.168.12.3/24 dev eth1
+        - ip route add default via 192.168.12.254 dev eth1
+
+    # ---- Hosts on Leaf3 (subnet 192.168.13.0/24) ----
     h31:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.10.10.31
       exec:
-       - ip link set dev eth1 address 00:00:00:00:00:05
-       - ip addr add 192.168.11.5/24 dev eth1
+        - ip link set dev eth1 address 00:00:00:00:00:07
+        - ip addr add 192.168.13.1/24 dev eth1
+        - ip route add default via 192.168.13.254 dev eth1
     h32:
       kind: linux
-      mgmt-ipv4: 172.10.10.32
       image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.10.10.32
       exec:
-        - ip link set dev eth1 address 00:00:00:00:00:06
-        - ip addr add 192.168.11.6/24 dev eth1
+        - ip link set dev eth1 address 00:00:00:00:00:08
+        - ip addr add 192.168.13.2/24 dev eth1
+        - ip route add default via 192.168.13.254 dev eth1
+    h33:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.10.10.33
+      exec:
+        - ip link set dev eth1 address 00:00:00:00:00:09
+        - ip addr add 192.168.13.3/24 dev eth1
+        - ip route add default via 192.168.13.254 dev eth1
 
+    # ---- Hosts on Leaf4 (subnet 192.168.14.0/24) ----
+    h41:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.10.10.41
+      exec:
+        - ip link set dev eth1 address 00:00:00:00:00:0a
+        - ip addr add 192.168.14.1/24 dev eth1
+        - ip route add default via 192.168.14.254 dev eth1
+    h42:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.10.10.42
+      exec:
+        - ip link set dev eth1 address 00:00:00:00:00:0e
+        - ip addr add 192.168.14.2/24 dev eth1
+        - ip route add default via 192.168.14.254 dev eth1
+    h43:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.10.10.43
+      exec:
+        - ip link set dev eth1 address 00:00:00:00:00:0f
+        - ip addr add 192.168.14.3/24 dev eth1
+        - ip route add default via 192.168.14.254 dev eth1
+
+    # ---- OVS Switches ----
     spine1:
       kind: ovs-bridge
     spine2:
+      kind: ovs-bridge
+    spine3:
       kind: ovs-bridge
     leaf1:
       kind: ovs-bridge
@@ -71,11 +133,52 @@ topology:
       kind: ovs-bridge
     leaf3:
       kind: ovs-bridge
+    leaf4:
+      kind: ovs-bridge
 
   links:
+    # ======================================================
+    # Spine-Leaf uplinks
+    # Order matters: determines OpenFlow port numbering.
+    # Spine ports: 1=leaf1, 2=leaf2, 3=leaf3, 4=leaf4
+    # Leaf  ports: 1=spine1, 2=spine2, 3=spine3
+    # ======================================================
+
+    # Spine1 uplinks (spine1 OF ports 1-4)
+    - endpoints: ["spine1:s1l1", "leaf1:l1s1"]
+    - endpoints: ["spine1:s1l2", "leaf2:l2s1"]
+    - endpoints: ["spine1:s1l3", "leaf3:l3s1"]
+    - endpoints: ["spine1:s1l4", "leaf4:l4s1"]
+
+    # Spine2 uplinks (spine2 OF ports 1-4)
+    - endpoints: ["spine2:s2l1", "leaf1:l1s2"]
+    - endpoints: ["spine2:s2l2", "leaf2:l2s2"]
+    - endpoints: ["spine2:s2l3", "leaf3:l3s2"]
+    - endpoints: ["spine2:s2l4", "leaf4:l4s2"]
+
+    # Spine3 uplinks (spine3 OF ports 1-4)
+    - endpoints: ["spine3:s3l1", "leaf1:l1s3"]
+    - endpoints: ["spine3:s3l2", "leaf2:l2s3"]
+    - endpoints: ["spine3:s3l3", "leaf3:l3s3"]
+    - endpoints: ["spine3:s3l4", "leaf4:l4s3"]
+
+    # ======================================================
+    # Host-Leaf downlinks
+    # Leaf host ports start at OF port 4 (after 3 spine uplinks)
+    # p1-p3: leaf1 hosts | p4-p6: leaf2 | p7-p9: leaf3 | p10-p12: leaf4
+    # ======================================================
     - endpoints: ["h11:eth1", "leaf1:p1"]
     - endpoints: ["h12:eth1", "leaf1:p2"]
-    - endpoints: ["h21:eth1", "leaf2:p3"]
-    - endpoints: ["h22:eth1", "leaf2:p4"]
-    - endpoints: ["h31:eth1", "leaf3:p5"]
-    - endpoints: ["h32:eth1", "leaf3:p6"]
+    - endpoints: ["h13:eth1", "leaf1:p3"]
+
+    - endpoints: ["h21:eth1", "leaf2:p4"]
+    - endpoints: ["h22:eth1", "leaf2:p5"]
+    - endpoints: ["h23:eth1", "leaf2:p6"]
+
+    - endpoints: ["h31:eth1", "leaf3:p7"]
+    - endpoints: ["h32:eth1", "leaf3:p8"]
+    - endpoints: ["h33:eth1", "leaf3:p9"]
+
+    - endpoints: ["h41:eth1", "leaf4:p10"]
+    - endpoints: ["h42:eth1", "leaf4:p11"]
+    - endpoints: ["h43:eth1", "leaf4:p12"]
