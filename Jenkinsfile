@@ -47,6 +47,20 @@ pipeline {
             }
         }
 
+        stage('Create OVS Bridges') {
+            steps {
+                sshagent(credentials: [env.SSH_CREDS]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${SSH_USER}@${HOST} '
+                            set -e
+                            cd ${REPO_DIR}
+                            sudo bash setup-dc.sh
+                        '
+                    """
+                }
+            }
+        }
+
         stage('Deploy ContainerLab Topology') {
             steps {
                 sshagent(credentials: [env.SSH_CREDS]) {
@@ -68,7 +82,6 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${SSH_USER}@${HOST} '
                             set -e
                             cd ${REPO_DIR}
-                            sudo bash setup-dc.sh
                             sudo bash num-ports.sh
                         '
                     """
