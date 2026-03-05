@@ -20,22 +20,39 @@ IDLE_TIME = 30
 
 class Network():
     """
-    Network definition
+    Network definition — 3-spine / 4-leaf / 12-host spine-leaf topology.
+
+    DPID assignments (set via bridge MAC in setup-dc.sh):
+      Spines : spine1=11 (0x0B), spine2=12 (0x0C), spine3=13 (0x0D)
+      Leaves : leaf1=21 (0x15), leaf2=22 (0x16), leaf3=23 (0x17), leaf4=24 (0x18)
+
+    OpenFlow port mapping (determined by port-add order in setup-dc.sh):
+      Spine  port 1 → leaf1  |  port 2 → leaf2  |  port 3 → leaf3  |  port 4 → leaf4
+      Leaf   port 1 → spine1 |  port 2 → spine2 |  port 3 → spine3
+      Leaf   port 4,5,6 → hosts (assigned by containerlab YAML / num-ports.sh)
     """
-    spines = [11, 12]
-    leaves = [21, 22, 23]
-    links = {(11, 21): {'port': 1},
-             (11, 22): {'port': 2},
-             (11, 23): {'port': 3},
-             (12, 21): {'port': 1},
-             (12, 22): {'port': 2},
-             (12, 23): {'port': 3},
-             (21, 11): {'port': 1},
-             (21, 12): {'port': 2},
-             (22, 11): {'port': 1},
-             (22, 12): {'port': 2},
-             (23, 11): {'port': 1},
-             (23, 12): {'port': 2}}
+
+    spines = [11, 12, 13]
+    leaves = [21, 22, 23, 24]
+    links = {
+        # Spine1 (11) → leaves
+        (11, 21): {'port': 1}, (11, 22): {'port': 2},
+        (11, 23): {'port': 3}, (11, 24): {'port': 4},
+        # Spine2 (12) → leaves
+        (12, 21): {'port': 1}, (12, 22): {'port': 2},
+        (12, 23): {'port': 3}, (12, 24): {'port': 4},
+        # Spine3 (13) → leaves
+        (13, 21): {'port': 1}, (13, 22): {'port': 2},
+        (13, 23): {'port': 3}, (13, 24): {'port': 4},
+        # Leaf1 (21) → spines
+        (21, 11): {'port': 1}, (21, 12): {'port': 2}, (21, 13): {'port': 3},
+        # Leaf2 (22) → spines
+        (22, 11): {'port': 1}, (22, 12): {'port': 2}, (22, 13): {'port': 3},
+        # Leaf3 (23) → spines
+        (23, 11): {'port': 1}, (23, 12): {'port': 2}, (23, 13): {'port': 3},
+        # Leaf4 (24) → spines
+        (24, 11): {'port': 1}, (24, 12): {'port': 2}, (24, 13): {'port': 3},
+    }
 
 
 net = Network()
