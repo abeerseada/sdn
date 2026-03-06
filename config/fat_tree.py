@@ -223,6 +223,19 @@ class FatTreeSwitch(BaseSwitch):
 
         dst_info = self.mac_table.get(dst)
 
+        # ── Firewall: block traffic between pod 0 and pod 3 ──
+        if dst_info is not None:
+            src_edge = self.mac_table.get(src, {}).get('dpid')
+            dst_edge = dst_info.get('dpid')
+            if src_edge in net.edge_set and dst_edge in net.edge_set:
+                sp = net.edge_pod.get(src_edge)
+                dp_ = net.edge_pod.get(dst_edge)
+                if sp is not None and dp_ is not None:
+                    if (sp == 0 and dp_ == 3) or (sp == 3 and dp_ == 0):
+                        self.logger.info(
+                            "FIREWALL DROP: %s (pod%d) → %s (pod%d)", src, sp, dst, dp_)
+                        return
+
         if dst_info is None:
             # Unknown destination — flood to all edge switches
             for edge_dpid in net.all_edges:
