@@ -81,32 +81,28 @@ topology:
       mgmt-ipv4: 172.20.20.21
       exec:
         - ip link set dev eth1 address 00:00:0a:00:01:01
-        - ip addr add 10.0.1.1/24 dev eth1
-        - ip route add default via 10.0.1.254 dev eth1
+        - ip addr add 10.0.1.1/8 dev eth1
     h012:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.22
       exec:
         - ip link set dev eth1 address 00:00:0a:00:01:02
-        - ip addr add 10.0.1.2/24 dev eth1
-        - ip route add default via 10.0.1.254 dev eth1
+        - ip addr add 10.0.1.2/8 dev eth1
     h021:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.23
       exec:
         - ip link set dev eth1 address 00:00:0a:00:02:01
-        - ip addr add 10.0.2.1/24 dev eth1
-        - ip route add default via 10.0.2.254 dev eth1
+        - ip addr add 10.0.2.1/8 dev eth1
     h022:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.24
       exec:
         - ip link set dev eth1 address 00:00:0a:00:02:02
-        - ip addr add 10.0.2.2/24 dev eth1
-        - ip route add default via 10.0.2.254 dev eth1
+        - ip addr add 10.0.2.2/8 dev eth1
 
     # ────────────────────────────────────────────────
     # Hosts — Pod 1  (10.1.x.x/24)
@@ -117,32 +113,28 @@ topology:
       mgmt-ipv4: 172.20.20.25
       exec:
         - ip link set dev eth1 address 00:00:0a:01:01:01
-        - ip addr add 10.1.1.1/24 dev eth1
-        - ip route add default via 10.1.1.254 dev eth1
+        - ip addr add 10.1.1.1/8 dev eth1
     h112:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.26
       exec:
         - ip link set dev eth1 address 00:00:0a:01:01:02
-        - ip addr add 10.1.1.2/24 dev eth1
-        - ip route add default via 10.1.1.254 dev eth1
+        - ip addr add 10.1.1.2/8 dev eth1
     h121:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.27
       exec:
         - ip link set dev eth1 address 00:00:0a:01:02:01
-        - ip addr add 10.1.2.1/24 dev eth1
-        - ip route add default via 10.1.2.254 dev eth1
+        - ip addr add 10.1.2.1/8 dev eth1
     h122:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.28
       exec:
         - ip link set dev eth1 address 00:00:0a:01:02:02
-        - ip addr add 10.1.2.2/24 dev eth1
-        - ip route add default via 10.1.2.254 dev eth1
+        - ip addr add 10.1.2.2/8 dev eth1
 
     # ────────────────────────────────────────────────
     # Hosts — Pod 2  (10.2.x.x/24)
@@ -153,32 +145,28 @@ topology:
       mgmt-ipv4: 172.20.20.29
       exec:
         - ip link set dev eth1 address 00:00:0a:02:01:01
-        - ip addr add 10.2.1.1/24 dev eth1
-        - ip route add default via 10.2.1.254 dev eth1
+        - ip addr add 10.2.1.1/8 dev eth1
     h212:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.30
       exec:
         - ip link set dev eth1 address 00:00:0a:02:01:02
-        - ip addr add 10.2.1.2/24 dev eth1
-        - ip route add default via 10.2.1.254 dev eth1
+        - ip addr add 10.2.1.2/8 dev eth1
     h221:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.31
       exec:
         - ip link set dev eth1 address 00:00:0a:02:02:01
-        - ip addr add 10.2.2.1/24 dev eth1
-        - ip route add default via 10.2.2.254 dev eth1
+        - ip addr add 10.2.2.1/8 dev eth1
     h222:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.32
       exec:
         - ip link set dev eth1 address 00:00:0a:02:02:02
-        - ip addr add 10.2.2.2/24 dev eth1
-        - ip route add default via 10.2.2.254 dev eth1
+        - ip addr add 10.2.2.2/8 dev eth1
 
     # ────────────────────────────────────────────────
     # Hosts — Pod 3  (10.3.x.x/24)
@@ -189,32 +177,28 @@ topology:
       mgmt-ipv4: 172.20.20.33
       exec:
         - ip link set dev eth1 address 00:00:0a:03:01:01
-        - ip addr add 10.3.1.1/24 dev eth1
-        - ip route add default via 10.3.1.254 dev eth1
+        - ip addr add 10.3.1.1/8 dev eth1
     h312:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.34
       exec:
         - ip link set dev eth1 address 00:00:0a:03:01:02
-        - ip addr add 10.3.1.2/24 dev eth1
-        - ip route add default via 10.3.1.254 dev eth1
+        - ip addr add 10.3.1.2/8 dev eth1
     h321:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.35
       exec:
         - ip link set dev eth1 address 00:00:0a:03:02:01
-        - ip addr add 10.3.2.1/24 dev eth1
-        - ip route add default via 10.3.2.254 dev eth1
+        - ip addr add 10.3.2.1/8 dev eth1
     h322:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
       mgmt-ipv4: 172.20.20.36
       exec:
         - ip link set dev eth1 address 00:00:0a:03:02:02
-        - ip addr add 10.3.2.2/24 dev eth1
-        - ip route add default via 10.3.2.254 dev eth1
+        - ip addr add 10.3.2.2/8 dev eth1
 
   links:
     # c1 → first agg in each pod (ports 1-4)
