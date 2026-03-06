@@ -10,7 +10,7 @@ Topology (k=4):
   - 16 hosts                10.pod.rack.host/24
 
 Port layout:
-  Core  : port 1-4 → one aggregation switch per pod
+  Core  : port 1-4 → one aggregation switch per pod 
   Agg   : port 1-2 → core  |  port 3-4 → edge
   Edge  : port 1-2 → agg   |  port 3-4 → hosts
 """
@@ -247,16 +247,19 @@ class FatTreeSwitch(BaseSwitch):
 
             # Walk the path: each entry is (sw, out_port_toward_dst)
             # We need the corresponding in_port for each switch.
-            prev_dpid  = dp.id
-            prev_port  = in_port   # ingress port on source edge
+            prev_dpid = dp.id
+            first     = True
 
             for (sw_dpid, out_port) in path:
                 sw_dp = get_datapath(self, sw_dpid)
-                # The in_port on this switch is the port facing prev_dpid
-                sw_in = net.links.get((sw_dpid, prev_dpid), ofproto.OFPP_CONTROLLER)
+                if first:
+                    # Source edge switch: use the actual ingress port
+                    sw_in = in_port
+                    first = False
+                else:
+                    sw_in = net.links.get((sw_dpid, prev_dpid), ofproto.OFPP_CONTROLLER)
                 self._install_bidir(sw_dp, src, dst, sw_in, out_port)
                 prev_dpid = sw_dpid
-                prev_port = out_port
 
             # Install flows on destination edge switch
             dst_dp   = get_datapath(self, dst_dpid)
