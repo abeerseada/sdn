@@ -1,90 +1,62 @@
 #!/bin/bash
 
-# Global Settings
-SPINE1=spine1
-SPINE2=spine2
-SPINE3=spine3
-LEAF1=leaf1
-LEAF2=leaf2
-LEAF3=leaf3
-LEAF4=leaf4
+# Fat-Tree k=4 OVS Setup
+# Reference: Al-Fares et al., ACM SIGCOMM 2008
+#
+# DPID assignments (derived from bridge MAC):
+#   Core : c1=0x0C01  c2=0x0C02  c3=0x0C03  c4=0x0C04
+#   Agg  : a01=0x0A01 a02=0x0A02 a11=0x0A03 a12=0x0A04
+#          a21=0x0A05 a22=0x0A06 a31=0x0A07 a32=0x0A08
+#   Edge : e01=0x0E01 e02=0x0E02 e11=0x0E03 e12=0x0E04
+#          e21=0x0E05 e22=0x0E06 e31=0x0E07 e32=0x0E08
 
-IP_CTRL=172.10.10.10
-IP_PORT=6653
-
+CTRL_IP=172.20.20.10
+CTRL_PORT=6653
 OF_VER=OpenFlow13
 FAIL_MODE=secure
 
-SFLOW=172.10.10.100
+CORE="c1 c2 c3 c4"
+AGG="a01 a02 a11 a12 a21 a22 a31 a32"
+EDGE="e01 e02 e11 e12 e21 e22 e31 e32"
+ALL="$CORE $AGG $EDGE"
 
-echo "=== Create switches ==="
-ovs-vsctl --may-exist add-br $SPINE1
-ovs-vsctl --may-exist add-br $SPINE2
-ovs-vsctl --may-exist add-br $SPINE3
-ovs-vsctl --may-exist add-br $LEAF1
-ovs-vsctl --may-exist add-br $LEAF2
-ovs-vsctl --may-exist add-br $LEAF3
-ovs-vsctl --may-exist add-br $LEAF4
-
-echo "=== Set MAC addresses (determines OpenFlow DPID) ==="
-# spine1=0x0B=11, spine2=0x0C=12, spine3=0x0D=13
-ovs-vsctl set bridge $SPINE1 other-config:hwaddr=00:00:00:00:00:0B
-ovs-vsctl set bridge $SPINE2 other-config:hwaddr=00:00:00:00:00:0C
-ovs-vsctl set bridge $SPINE3 other-config:hwaddr=00:00:00:00:00:0D
-# leaf1=0x15=21, leaf2=0x16=22, leaf3=0x17=23, leaf4=0x18=24
-ovs-vsctl set bridge $LEAF1 other-config:hwaddr=00:00:00:00:00:15
-ovs-vsctl set bridge $LEAF2 other-config:hwaddr=00:00:00:00:00:16
-ovs-vsctl set bridge $LEAF3 other-config:hwaddr=00:00:00:00:00:17
-ovs-vsctl set bridge $LEAF4 other-config:hwaddr=00:00:00:00:00:18
-
-echo "=== Connect switches via patch ports ==="
-# Port-add ORDER determines OpenFlow port numbers.
-#
-# Spines: add leaf1 first → OF port 1, leaf2 → port 2, leaf3 → port 3, leaf4 → port 4
-# Leaves: add spine1 first → OF port 1, spine2 → port 2, spine3 → port 3
-
-# --- Spine1 ports (OF 1→leaf1, 2→leaf2, 3→leaf3, 4→leaf4) ---
-ovs-vsctl --may-exist add-port $SPINE1 s1l1 -- set interface s1l1 type=patch options:peer=l1s1
-ovs-vsctl --may-exist add-port $SPINE1 s1l2 -- set interface s1l2 type=patch options:peer=l2s1
-ovs-vsctl --may-exist add-port $SPINE1 s1l3 -- set interface s1l3 type=patch options:peer=l3s1
-ovs-vsctl --may-exist add-port $SPINE1 s1l4 -- set interface s1l4 type=patch options:peer=l4s1
-
-# --- Spine2 ports (OF 1→leaf1, 2→leaf2, 3→leaf3, 4→leaf4) ---
-ovs-vsctl --may-exist add-port $SPINE2 s2l1 -- set interface s2l1 type=patch options:peer=l1s2
-ovs-vsctl --may-exist add-port $SPINE2 s2l2 -- set interface s2l2 type=patch options:peer=l2s2
-ovs-vsctl --may-exist add-port $SPINE2 s2l3 -- set interface s2l3 type=patch options:peer=l3s2
-ovs-vsctl --may-exist add-port $SPINE2 s2l4 -- set interface s2l4 type=patch options:peer=l4s2
-
-# --- Spine3 ports (OF 1→leaf1, 2→leaf2, 3→leaf3, 4→leaf4) ---
-ovs-vsctl --may-exist add-port $SPINE3 s3l1 -- set interface s3l1 type=patch options:peer=l1s3
-ovs-vsctl --may-exist add-port $SPINE3 s3l2 -- set interface s3l2 type=patch options:peer=l2s3
-ovs-vsctl --may-exist add-port $SPINE3 s3l3 -- set interface s3l3 type=patch options:peer=l3s3
-ovs-vsctl --may-exist add-port $SPINE3 s3l4 -- set interface s3l4 type=patch options:peer=l4s3
-
-# --- Leaf1 uplink ports (OF 1→spine1, 2→spine2, 3→spine3) ---
-ovs-vsctl --may-exist add-port $LEAF1 l1s1 -- set interface l1s1 type=patch options:peer=s1l1
-ovs-vsctl --may-exist add-port $LEAF1 l1s2 -- set interface l1s2 type=patch options:peer=s2l1
-ovs-vsctl --may-exist add-port $LEAF1 l1s3 -- set interface l1s3 type=patch options:peer=s3l1
-
-# --- Leaf2 uplink ports (OF 1→spine1, 2→spine2, 3→spine3) ---
-ovs-vsctl --may-exist add-port $LEAF2 l2s1 -- set interface l2s1 type=patch options:peer=s1l2
-ovs-vsctl --may-exist add-port $LEAF2 l2s2 -- set interface l2s2 type=patch options:peer=s2l2
-ovs-vsctl --may-exist add-port $LEAF2 l2s3 -- set interface l2s3 type=patch options:peer=s3l2
-
-# --- Leaf3 uplink ports (OF 1→spine1, 2→spine2, 3→spine3) ---
-ovs-vsctl --may-exist add-port $LEAF3 l3s1 -- set interface l3s1 type=patch options:peer=s1l3
-ovs-vsctl --may-exist add-port $LEAF3 l3s2 -- set interface l3s2 type=patch options:peer=s2l3
-ovs-vsctl --may-exist add-port $LEAF3 l3s3 -- set interface l3s3 type=patch options:peer=s3l3
-
-# --- Leaf4 uplink ports (OF 1→spine1, 2→spine2, 3→spine3) ---
-ovs-vsctl --may-exist add-port $LEAF4 l4s1 -- set interface l4s1 type=patch options:peer=s1l4
-ovs-vsctl --may-exist add-port $LEAF4 l4s2 -- set interface l4s2 type=patch options:peer=s2l4
-ovs-vsctl --may-exist add-port $LEAF4 l4s3 -- set interface l4s3 type=patch options:peer=s3l4
-
-echo "=== Set switch options ==="
-for BR in $SPINE1 $SPINE2 $SPINE3 $LEAF1 $LEAF2 $LEAF3 $LEAF4
-do
-  ovs-vsctl set bridge $BR fail_mode=$FAIL_MODE
-  ovs-vsctl set bridge $BR protocols=$OF_VER
-  ovs-vsctl set-controller $BR tcp:$IP_CTRL:$IP_PORT
+echo "=== Creating OVS bridges ==="
+for sw in $ALL; do
+    ovs-vsctl --may-exist add-br $sw
 done
+
+echo "=== Setting MAC addresses (DPIDs) ==="
+# Core layer
+ovs-vsctl set bridge c1 other-config:hwaddr=00:00:00:00:0c:01
+ovs-vsctl set bridge c2 other-config:hwaddr=00:00:00:00:0c:02
+ovs-vsctl set bridge c3 other-config:hwaddr=00:00:00:00:0c:03
+ovs-vsctl set bridge c4 other-config:hwaddr=00:00:00:00:0c:04
+
+# Aggregation layer
+ovs-vsctl set bridge a01 other-config:hwaddr=00:00:00:00:0a:01
+ovs-vsctl set bridge a02 other-config:hwaddr=00:00:00:00:0a:02
+ovs-vsctl set bridge a11 other-config:hwaddr=00:00:00:00:0a:03
+ovs-vsctl set bridge a12 other-config:hwaddr=00:00:00:00:0a:04
+ovs-vsctl set bridge a21 other-config:hwaddr=00:00:00:00:0a:05
+ovs-vsctl set bridge a22 other-config:hwaddr=00:00:00:00:0a:06
+ovs-vsctl set bridge a31 other-config:hwaddr=00:00:00:00:0a:07
+ovs-vsctl set bridge a32 other-config:hwaddr=00:00:00:00:0a:08
+
+# Edge layer
+ovs-vsctl set bridge e01 other-config:hwaddr=00:00:00:00:0e:01
+ovs-vsctl set bridge e02 other-config:hwaddr=00:00:00:00:0e:02
+ovs-vsctl set bridge e11 other-config:hwaddr=00:00:00:00:0e:03
+ovs-vsctl set bridge e12 other-config:hwaddr=00:00:00:00:0e:04
+ovs-vsctl set bridge e21 other-config:hwaddr=00:00:00:00:0e:05
+ovs-vsctl set bridge e22 other-config:hwaddr=00:00:00:00:0e:06
+ovs-vsctl set bridge e31 other-config:hwaddr=00:00:00:00:0e:07
+ovs-vsctl set bridge e32 other-config:hwaddr=00:00:00:00:0e:08
+
+echo "=== Setting OpenFlow options ==="
+for sw in $ALL; do
+    ovs-vsctl set bridge $sw fail_mode=$FAIL_MODE
+    ovs-vsctl set bridge $sw protocols=$OF_VER
+    ovs-vsctl set-controller $sw tcp:$CTRL_IP:$CTRL_PORT
+done
+
+echo "=== Done ==="

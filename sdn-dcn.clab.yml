@@ -1,184 +1,281 @@
-name: sdn-dcn
+name: fat-tree-k4
 
 mgmt:
-  ipv4-subnet: 172.10.10.0/24
-  ipv4-gw: 172.10.10.1
+  ipv4-subnet: 172.20.20.0/24
+  ipv4-gw: 172.20.20.1
 
 topology:
   nodes:
+
+    # ────────────────────────────────────────────────
+    # SDN Controller (Ryu + FlowManager UI)
+    # ────────────────────────────────────────────────
     ctrl:
       kind: linux
       image: martimy/ryu-flowmanager:latest
-      mgmt-ipv4: 172.10.10.10
+      mgmt-ipv4: 172.20.20.10
       binds:
         - config:/home/auser/labs
       ports:
         - 8081:8080
-      entrypoint: ryu-manager flowmanager/flowmanager.py labs/spine_leaf_1.py
+      entrypoint: ryu-manager flowmanager/flowmanager.py labs/fat_tree.py
 
-    # ---- Hosts on Leaf1 (subnet 192.168.11.0/24) ----
-    h11:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.11
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:01
-        - ip addr add 192.168.11.1/24 dev eth1
-        - ip route add default via 192.168.11.254 dev eth1
-    h12:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.12
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:02
-        - ip addr add 192.168.11.2/24 dev eth1
-        - ip route add default via 192.168.11.254 dev eth1
-    h13:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.13
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:03
-        - ip addr add 192.168.11.3/24 dev eth1
-        - ip route add default via 192.168.11.254 dev eth1
+    # ────────────────────────────────────────────────
+    # Core Layer  (k²/4 = 4 switches)
+    # ────────────────────────────────────────────────
+    c1:
+      kind: ovs-bridge
+    c2:
+      kind: ovs-bridge
+    c3:
+      kind: ovs-bridge
+    c4:
+      kind: ovs-bridge
 
-    # ---- Hosts on Leaf2 (subnet 192.168.12.0/24) ----
-    h21:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.21
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:04
-        - ip addr add 192.168.12.1/24 dev eth1
-        - ip route add default via 192.168.12.254 dev eth1
-    h22:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.22
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:05
-        - ip addr add 192.168.12.2/24 dev eth1
-        - ip route add default via 192.168.12.254 dev eth1
-    h23:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.23
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:06
-        - ip addr add 192.168.12.3/24 dev eth1
-        - ip route add default via 192.168.12.254 dev eth1
+    # ────────────────────────────────────────────────
+    # Aggregation Layer  (k pods × k/2 = 8 switches)
+    # ────────────────────────────────────────────────
+    a01:
+      kind: ovs-bridge
+    a02:
+      kind: ovs-bridge
+    a11:
+      kind: ovs-bridge
+    a12:
+      kind: ovs-bridge
+    a21:
+      kind: ovs-bridge
+    a22:
+      kind: ovs-bridge
+    a31:
+      kind: ovs-bridge
+    a32:
+      kind: ovs-bridge
 
-    # ---- Hosts on Leaf3 (subnet 192.168.13.0/24) ----
-    h31:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.31
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:07
-        - ip addr add 192.168.13.1/24 dev eth1
-        - ip route add default via 192.168.13.254 dev eth1
-    h32:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.32
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:08
-        - ip addr add 192.168.13.2/24 dev eth1
-        - ip route add default via 192.168.13.254 dev eth1
-    h33:
-      kind: linux
-      image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.33
-      exec:
-        - ip link set dev eth1 address 00:00:00:00:00:09
-        - ip addr add 192.168.13.3/24 dev eth1
-        - ip route add default via 192.168.13.254 dev eth1
+    # ────────────────────────────────────────────────
+    # Edge Layer  (k pods × k/2 = 8 switches)
+    # ────────────────────────────────────────────────
+    e01:
+      kind: ovs-bridge
+    e02:
+      kind: ovs-bridge
+    e11:
+      kind: ovs-bridge
+    e12:
+      kind: ovs-bridge
+    e21:
+      kind: ovs-bridge
+    e22:
+      kind: ovs-bridge
+    e31:
+      kind: ovs-bridge
+    e32:
+      kind: ovs-bridge
 
-    # ---- Hosts on Leaf4 (subnet 192.168.14.0/24) ----
-    h41:
+    # ────────────────────────────────────────────────
+    # Hosts — Pod 0  (10.0.x.x/24)
+    # ────────────────────────────────────────────────
+    h011:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.41
+      mgmt-ipv4: 172.20.20.21
       exec:
-        - ip link set dev eth1 address 00:00:00:00:00:0a
-        - ip addr add 192.168.14.1/24 dev eth1
-        - ip route add default via 192.168.14.254 dev eth1
-    h42:
+        - ip link set dev eth1 address 00:00:0a:00:01:01
+        - ip addr add 10.0.1.1/24 dev eth1
+        - ip route add default via 10.0.1.254 dev eth1
+    h012:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.42
+      mgmt-ipv4: 172.20.20.22
       exec:
-        - ip link set dev eth1 address 00:00:00:00:00:0e
-        - ip addr add 192.168.14.2/24 dev eth1
-        - ip route add default via 192.168.14.254 dev eth1
-    h43:
+        - ip link set dev eth1 address 00:00:0a:00:01:02
+        - ip addr add 10.0.1.2/24 dev eth1
+        - ip route add default via 10.0.1.254 dev eth1
+    h021:
       kind: linux
       image: wbitt/network-multitool:alpine-minimal
-      mgmt-ipv4: 172.10.10.43
+      mgmt-ipv4: 172.20.20.23
       exec:
-        - ip link set dev eth1 address 00:00:00:00:00:0f
-        - ip addr add 192.168.14.3/24 dev eth1
-        - ip route add default via 192.168.14.254 dev eth1
+        - ip link set dev eth1 address 00:00:0a:00:02:01
+        - ip addr add 10.0.2.1/24 dev eth1
+        - ip route add default via 10.0.2.254 dev eth1
+    h022:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.24
+      exec:
+        - ip link set dev eth1 address 00:00:0a:00:02:02
+        - ip addr add 10.0.2.2/24 dev eth1
+        - ip route add default via 10.0.2.254 dev eth1
 
-    # ---- OVS Switches ----
-    spine1:
-      kind: ovs-bridge
-    spine2:
-      kind: ovs-bridge
-    spine3:
-      kind: ovs-bridge
-    leaf1:
-      kind: ovs-bridge
-    leaf2:
-      kind: ovs-bridge
-    leaf3:
-      kind: ovs-bridge
-    leaf4:
-      kind: ovs-bridge
+    # ────────────────────────────────────────────────
+    # Hosts — Pod 1  (10.1.x.x/24)
+    # ────────────────────────────────────────────────
+    h111:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.25
+      exec:
+        - ip link set dev eth1 address 00:00:0a:01:01:01
+        - ip addr add 10.1.1.1/24 dev eth1
+        - ip route add default via 10.1.1.254 dev eth1
+    h112:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.26
+      exec:
+        - ip link set dev eth1 address 00:00:0a:01:01:02
+        - ip addr add 10.1.1.2/24 dev eth1
+        - ip route add default via 10.1.1.254 dev eth1
+    h121:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.27
+      exec:
+        - ip link set dev eth1 address 00:00:0a:01:02:01
+        - ip addr add 10.1.2.1/24 dev eth1
+        - ip route add default via 10.1.2.254 dev eth1
+    h122:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.28
+      exec:
+        - ip link set dev eth1 address 00:00:0a:01:02:02
+        - ip addr add 10.1.2.2/24 dev eth1
+        - ip route add default via 10.1.2.254 dev eth1
+
+    # ────────────────────────────────────────────────
+    # Hosts — Pod 2  (10.2.x.x/24)
+    # ────────────────────────────────────────────────
+    h211:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.29
+      exec:
+        - ip link set dev eth1 address 00:00:0a:02:01:01
+        - ip addr add 10.2.1.1/24 dev eth1
+        - ip route add default via 10.2.1.254 dev eth1
+    h212:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.30
+      exec:
+        - ip link set dev eth1 address 00:00:0a:02:01:02
+        - ip addr add 10.2.1.2/24 dev eth1
+        - ip route add default via 10.2.1.254 dev eth1
+    h221:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.31
+      exec:
+        - ip link set dev eth1 address 00:00:0a:02:02:01
+        - ip addr add 10.2.2.1/24 dev eth1
+        - ip route add default via 10.2.2.254 dev eth1
+    h222:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.32
+      exec:
+        - ip link set dev eth1 address 00:00:0a:02:02:02
+        - ip addr add 10.2.2.2/24 dev eth1
+        - ip route add default via 10.2.2.254 dev eth1
+
+    # ────────────────────────────────────────────────
+    # Hosts — Pod 3  (10.3.x.x/24)
+    # ────────────────────────────────────────────────
+    h311:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.33
+      exec:
+        - ip link set dev eth1 address 00:00:0a:03:01:01
+        - ip addr add 10.3.1.1/24 dev eth1
+        - ip route add default via 10.3.1.254 dev eth1
+    h312:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.34
+      exec:
+        - ip link set dev eth1 address 00:00:0a:03:01:02
+        - ip addr add 10.3.1.2/24 dev eth1
+        - ip route add default via 10.3.1.254 dev eth1
+    h321:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.35
+      exec:
+        - ip link set dev eth1 address 00:00:0a:03:02:01
+        - ip addr add 10.3.2.1/24 dev eth1
+        - ip route add default via 10.3.2.254 dev eth1
+    h322:
+      kind: linux
+      image: wbitt/network-multitool:alpine-minimal
+      mgmt-ipv4: 172.20.20.36
+      exec:
+        - ip link set dev eth1 address 00:00:0a:03:02:02
+        - ip addr add 10.3.2.2/24 dev eth1
+        - ip route add default via 10.3.2.254 dev eth1
 
   links:
-    # ======================================================
-    # Spine-Leaf uplinks
-    # Order matters: determines OpenFlow port numbering.
-    # Spine ports: 1=leaf1, 2=leaf2, 3=leaf3, 4=leaf4
-    # Leaf  ports: 1=spine1, 2=spine2, 3=spine3
-    # ======================================================
+    # c1 → first agg in each pod (ports 1-4)
+    - endpoints: ["c1:c1a01", "a01:a01c1"]
+    - endpoints: ["c1:c1a11", "a11:a11c1"]
+    - endpoints: ["c1:c1a21", "a21:a21c1"]
+    - endpoints: ["c1:c1a31", "a31:a31c1"]
+    # c2 → first agg in each pod
+    - endpoints: ["c2:c2a01", "a01:a01c2"]
+    - endpoints: ["c2:c2a11", "a11:a11c2"]
+    - endpoints: ["c2:c2a21", "a21:a21c2"]
+    - endpoints: ["c2:c2a31", "a31:a31c2"]
+    # c3 → second agg in each pod
+    - endpoints: ["c3:c3a02", "a02:a02c3"]
+    - endpoints: ["c3:c3a12", "a12:a12c3"]
+    - endpoints: ["c3:c3a22", "a22:a22c3"]
+    - endpoints: ["c3:c3a32", "a32:a32c3"]
+    # c4 → second agg in each pod
+    - endpoints: ["c4:c4a02", "a02:a02c4"]
+    - endpoints: ["c4:c4a12", "a12:a12c4"]
+    - endpoints: ["c4:c4a22", "a22:a22c4"]
+    - endpoints: ["c4:c4a32", "a32:a32c4"]
 
-    # Spine1 uplinks (spine1 OF ports 1-4)
-    - endpoints: ["spine1:s1l1", "leaf1:l1s1"]
-    - endpoints: ["spine1:s1l2", "leaf2:l2s1"]
-    - endpoints: ["spine1:s1l3", "leaf3:l3s1"]
-    - endpoints: ["spine1:s1l4", "leaf4:l4s1"]
+    # Pod 0 agg → edge
+    - endpoints: ["a01:a01e01", "e01:e01a01"]
+    - endpoints: ["a01:a01e02", "e02:e02a01"]
+    - endpoints: ["a02:a02e01", "e01:e01a02"]
+    - endpoints: ["a02:a02e02", "e02:e02a02"]
+    # Pod 1 agg → edge
+    - endpoints: ["a11:a11e11", "e11:e11a11"]
+    - endpoints: ["a11:a11e12", "e12:e12a11"]
+    - endpoints: ["a12:a12e11", "e11:e11a12"]
+    - endpoints: ["a12:a12e12", "e12:e12a12"]
+    # Pod 2 agg → edge
+    - endpoints: ["a21:a21e21", "e21:e21a21"]
+    - endpoints: ["a21:a21e22", "e22:e22a21"]
+    - endpoints: ["a22:a22e21", "e21:e21a22"]
+    - endpoints: ["a22:a22e22", "e22:e22a22"]
+    # Pod 3 agg → edge
+    - endpoints: ["a31:a31e31", "e31:e31a31"]
+    - endpoints: ["a31:a31e32", "e32:e32a31"]
+    - endpoints: ["a32:a32e31", "e31:e31a32"]
+    - endpoints: ["a32:a32e32", "e32:e32a32"]
 
-    # Spine2 uplinks (spine2 OF ports 1-4)
-    - endpoints: ["spine2:s2l1", "leaf1:l1s2"]
-    - endpoints: ["spine2:s2l2", "leaf2:l2s2"]
-    - endpoints: ["spine2:s2l3", "leaf3:l3s2"]
-    - endpoints: ["spine2:s2l4", "leaf4:l4s2"]
-
-    # Spine3 uplinks (spine3 OF ports 1-4)
-    - endpoints: ["spine3:s3l1", "leaf1:l1s3"]
-    - endpoints: ["spine3:s3l2", "leaf2:l2s3"]
-    - endpoints: ["spine3:s3l3", "leaf3:l3s3"]
-    - endpoints: ["spine3:s3l4", "leaf4:l4s3"]
-
-    # ======================================================
-    # Host-Leaf downlinks
-    # Leaf host ports start at OF port 4 (after 3 spine uplinks)
-    # p1-p3: leaf1 hosts | p4-p6: leaf2 | p7-p9: leaf3 | p10-p12: leaf4
-    # ======================================================
-    - endpoints: ["h11:eth1", "leaf1:p1"]
-    - endpoints: ["h12:eth1", "leaf1:p2"]
-    - endpoints: ["h13:eth1", "leaf1:p3"]
-
-    - endpoints: ["h21:eth1", "leaf2:p4"]
-    - endpoints: ["h22:eth1", "leaf2:p5"]
-    - endpoints: ["h23:eth1", "leaf2:p6"]
-
-    - endpoints: ["h31:eth1", "leaf3:p7"]
-    - endpoints: ["h32:eth1", "leaf3:p8"]
-    - endpoints: ["h33:eth1", "leaf3:p9"]
-
-    - endpoints: ["h41:eth1", "leaf4:p10"]
-    - endpoints: ["h42:eth1", "leaf4:p11"]
-    - endpoints: ["h43:eth1", "leaf4:p12"]
+    # Pod 0 edge → hosts
+    - endpoints: ["h011:eth1", "e01:e01h011"]
+    - endpoints: ["h012:eth1", "e01:e01h012"]
+    - endpoints: ["h021:eth1", "e02:e02h021"]
+    - endpoints: ["h022:eth1", "e02:e02h022"]
+    # Pod 1 edge → hosts
+    - endpoints: ["h111:eth1", "e11:e11h111"]
+    - endpoints: ["h112:eth1", "e11:e11h112"]
+    - endpoints: ["h121:eth1", "e12:e12h121"]
+    - endpoints: ["h122:eth1", "e12:e12h122"]
+    # Pod 2 edge → hosts
+    - endpoints: ["h211:eth1", "e21:e21h211"]
+    - endpoints: ["h212:eth1", "e21:e21h212"]
+    - endpoints: ["h221:eth1", "e22:e22h221"]
+    - endpoints: ["h222:eth1", "e22:e22h222"]
+    # Pod 3 edge → hosts
+    - endpoints: ["h311:eth1", "e31:e31h311"]
+    - endpoints: ["h312:eth1", "e31:e31h312"]
+    - endpoints: ["h321:eth1", "e32:e32h321"]
+    - endpoints: ["h322:eth1", "e32:e32h322"]
