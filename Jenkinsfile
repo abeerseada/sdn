@@ -9,7 +9,7 @@ pipeline {
         REPO_DIR  = '/opt/sdn'
         SSH_CREDS = 'ec2-ssh-key'
         SSH_USER  = 'ubuntu'
-        HOST      = '18.185.116.60'
+        HOST      = '63.180.217.182'
     }
 
     stages {
