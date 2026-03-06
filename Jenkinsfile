@@ -41,7 +41,7 @@ pipeline {
                             cd ${REPO_DIR}
                             sudo clab destroy --all --cleanup 2>/dev/null || true
                             bash reset-dc.sh 2>/dev/null || true
-                            sudo ip -o link show | awk -F': ' '{print $2}' | awk '{print $1}' | grep -E '^(c[1-4]|a[0-3][1-2]|e[0-3][1-2]|h[0-3][1-2][1-2])' | xargs -I{} sudo ip link delete {} 2>/dev/null || true
+                            sudo ip -o link show | awk -F": " "{print \$2}" | awk "{print \$1}" | grep -E "^(c[1-4]|a[0-3][1-2]|e[0-3][1-2]|h[0-3][1-2][1-2])" | xargs -I{} sudo ip link delete {} 2>/dev/null || true
                         '
                     """
                 }
