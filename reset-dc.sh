@@ -8,7 +8,7 @@ for sw in c1 c2 c3 c4 \
 done
 
 echo "=== Removing leftover veth interfaces ==="
-for iface in $(ip -o link show | sed 's/.*: \([^@: ]*\).*/\1/' | grep -E '^[ace][0-9]|^h[0-9]'); do
+for iface in $(ip -o link show | awk '{print $2}' | cut -d'@' -f1 | cut -d':' -f1 | grep -E '^[ace][0-9]|^h[0-9]'); do
     ip link delete "$iface" 2>/dev/null || true
 done
 
